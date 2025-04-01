@@ -6,8 +6,8 @@
 #define MAX_PRODUCED 17
 #define MAX_QUEUE 7
 
-#define NUM_PRODUCERS 50
-#define NUM_CONSUMERS 50
+#define NUM_PRODUCERS 200
+#define NUM_CONSUMERS 200
 
 pthread_cond_t cond_queue_empty, cond_queue_full;
 pthread_mutex_t item_queue_cond_lock, produced_lock, consumer_lock, item_lock;
@@ -43,8 +43,6 @@ void process_item(int tid, int my_item) {
 
 void *producer(void *tid) {
     int thread_id = *((int *)tid);
-    // free(tid);
-
     // printf("[%d] Producer starting...", thread_id);
 
 	int item;
@@ -53,7 +51,9 @@ void *producer(void *tid) {
 
 		pthread_mutex_lock(&item_queue_cond_lock);
 
+        // broadcast to wake other producers
         if (produced >= MAX_PRODUCED) {
+            pthread_cond_broadcast(&cond_queue_empty);
             pthread_mutex_unlock(&item_queue_cond_lock);
             break;
         }
@@ -82,7 +82,6 @@ void *producer(void *tid) {
 
 void *consumer(void *tid) {
     int thread_id = *((int *)tid);
-    // free(tid);
     // printf("[%d] Consumer starting...", thread_id);
 
 	int my_item = 0;
