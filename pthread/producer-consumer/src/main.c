@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #define MAX_PRODUCED 17
 #define MAX_QUEUE 7
@@ -20,7 +21,9 @@ int create_item(void) {
 
 void insert_into_queue(int tid, int item) {
 	queue[item_available++] = item;
-	printf("[%d] producing item:%d, value:%d, queued:%d \n", tid, produced, item, item_available); 
+    produced++;
+	printf("[%d] producing item:%d, value:%d, queued:%d \n", tid, produced, item, item_available);
+    usleep(100*1000);
 	return;
 
 }
@@ -68,9 +71,7 @@ void *producer(void *tid) {
             break;
         }
 
-		// insert_into_queue(*((int *)tid), item);
-        queue[item_available++] = item;
-        produced++;
+		insert_into_queue(*((int *)tid), item);
 
         pthread_cond_signal(&cond_queue_full);
         pthread_mutex_unlock(&item_queue_cond_lock);
@@ -151,6 +152,8 @@ int main(void) {
     for(int i = 0; i < NUM_CONSUMERS; i++) {
         pthread_join(consumers[i], 0);
     }
+
+    printf("Exiting main thread. Produced %d, consumed %d, available %d", produced, consumed, item_available);
 
 	exit(0);	
 }
