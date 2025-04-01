@@ -1,3 +1,4 @@
 exec
 *.o
-
+presentations/index_files/
+presentations/*.html

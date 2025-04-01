@@ -1,0 +1,42 @@
+---
+title: "Análise Artigo 01"
+subtitle: "Performance Analysis of Parallel Programming Paradigms on CPU-GPU Clusters"
+format:
+  revealjs:
+    slide-number: true
+    transition: fade
+---
+
+# Pergunta motivadora
+
+Qual modelo de programação paralela (OpenMP ou CUDA) é mais eficiente nos algoritmos BFS e DFS em grafos grandes?
+
+## BFS (Busca em largura) & DFS (Busca em profundidade)
+
+### Descrever cada algoritmo mostrando o uso de GMask e pragma
+
+## **Performance Comparison: OpenMP vs. CUDA**
+| BFS/DFS | OpenMP (CPU) | CUDA (GPU) |
+|---------|-------------|------------|
+| Execution Model | Multi-threaded | Massively Parallel |
+| Performance | Slower due to thread overhead | 187x-240x speedup |
+| Graph Size Handling | Limited | Handles massive graphs efficiently |
+
+## **Key Observations**
+🔹 **CPU (OpenMP) suffers from:** Thread idling, synchronization costs, and inefficient memory access.
+🔹 **GPU (CUDA) benefits from:** Thousands of cores executing in parallel, optimized memory use.
+🔹 **CUDA is significantly faster (187x-240x)** for BFS & DFS on large graphs.
+
+## **Future Work & Open Questions**
+✅ Can we use **hybrid CPU-GPU models** for better performance?
+✅ How can **memory optimizations** improve CUDA BFS?
+✅ What if we test **real-world applications** (social networks, AI pathfinding)?
+
+## **Final Takeaways**
+🚀 CUDA **significantly outperforms** OpenMP for BFS/DFS.
+🛠️ Understanding **parallel execution models** is critical for HPC & AI.
+🔍 **Future research can focus on optimizations & hybrid models.**
+
+## **Q&A** 💡
+Let's discuss where we can apply these concepts!
+
