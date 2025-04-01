@@ -1,94 +1,157 @@
-#define NUM_ELEM_TO_PRODUCE 17
-#define BUFFER_SIZE 7
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <pthread.h>
-#include <semaphore.h>
-#include <time.h>
 
-sem_t empty_count;
-sem_t fill_count;
-pthread_mutex_t mutex;
+#define MAX_PRODUCED 17
+#define MAX_QUEUE 7
 
-struct BufferState {
-    int buffer[BUFFER_SIZE];
-    int buffer_index;
-};
+#define NUM_PRODUCERS 50
+#define NUM_CONSUMERS 50
 
-void *produce(void *bufferState) {
-    printf("Producer thread started.\n");
-    struct BufferState *bs = (struct BufferState *)bufferState;
+pthread_cond_t cond_queue_empty, cond_queue_full;
+pthread_mutex_t item_queue_cond_lock, produced_lock, consumer_lock, item_lock;
 
-    for (int i = 0; i < NUM_ELEM_TO_PRODUCE; i++) {
-        int value = rand() % 100;
+int queue[MAX_QUEUE], item_available=0, produced=0, consumed=0;
 
-        sem_wait(&empty_count);
-        pthread_mutex_lock(&mutex);
-
-        bs->buffer[bs->buffer_index++] = value;
-        printf("Produced: %d\n", value);
-
-        pthread_mutex_unlock(&mutex);
-        sem_post(&fill_count);
-    }
-
-    return NULL;
+int create_item(void) {
+	return(rand()%1000);
 }
 
-void *consume(void *bufferState) {
-    printf("Consumer thread started.\n");
-    struct BufferState *bs = (struct BufferState *)bufferState;
+void insert_into_queue(int tid, int item) {
+	queue[item_available++] = item;
+	printf("[%d] producing item:%d, value:%d, queued:%d \n", tid, produced, item, item_available); 
+	return;
 
-    while (1) {
-        sem_wait(&fill_count);
-        pthread_mutex_lock(&mutex);
+}
 
-        if (bs->buffer_index <= 0 && NUM_ELEM_TO_PRODUCE <= 0) {
-            pthread_mutex_unlock(&mutex);
-            sem_post(&fill_count);
+int extract_from_queue(int tid) {
+	consumed++;
+	printf("[%d] consuming item:%d, value:%d, queued:%d \n", tid, consumed, queue[item_available-1], item_available-1); 
+	int extracted = (queue[--item_available]);
+    return extracted;
+}
+
+void process_item(int tid, int my_item) {
+	static int printed=0;
+
+	printf("[%d] Printed:%d, value:%d, queued:%d \n", tid, printed++, my_item, item_available);
+
+	return;
+
+}
+
+void *producer(void *tid) {
+    int thread_id = *((int *)tid);
+    // free(tid);
+
+    // printf("[%d] Producer starting...", thread_id);
+
+	int item;
+	while (1) {
+		item = create_item();
+
+		pthread_mutex_lock(&item_queue_cond_lock);
+
+        if (produced >= MAX_PRODUCED) {
+            pthread_mutex_unlock(&item_queue_cond_lock);
             break;
         }
 
-        int value = bs->buffer[--bs->buffer_index];
-        printf("Consumed: %d\n", value);
+        while (item_available == MAX_QUEUE) {
+            printf("[%d] Queue full waiting consumers... (produced: %d)\n", thread_id, produced);
+			pthread_cond_wait(&cond_queue_empty, &item_queue_cond_lock);
+        }
 
-        pthread_mutex_unlock(&mutex);
-        sem_post(&empty_count);
-    }
+        if (produced >= MAX_PRODUCED) {
+            pthread_mutex_unlock(&item_queue_cond_lock);
+            break;
+        }
 
-    return NULL;
+		// insert_into_queue(*((int *)tid), item);
+        queue[item_available++] = item;
+        produced++;
+
+        pthread_cond_signal(&cond_queue_full);
+        pthread_mutex_unlock(&item_queue_cond_lock);
+	}
+
+    printf("[%d] Producer exit...\n", thread_id);
+	pthread_exit(0);
 }
 
-int main() {
-    srand(time(NULL));
+void *consumer(void *tid) {
+    int thread_id = *((int *)tid);
+    // free(tid);
+    // printf("[%d] Consumer starting...", thread_id);
 
-    pthread_t producer, consumer;
-    struct BufferState bufferState;
-    bufferState.buffer_index = 0;
+	int my_item = 0;
+	while (consumed < MAX_PRODUCED) {
+		pthread_mutex_lock(&item_queue_cond_lock);
 
-    pthread_mutex_init(&mutex, NULL);
-    sem_init(&empty_count, 0, BUFFER_SIZE);
-    sem_init(&fill_count, 0, 0);
+        if (consumed >= MAX_PRODUCED) {
+            pthread_mutex_unlock(&item_queue_cond_lock);
+            break;
+        }
 
-    if (pthread_create(&producer, NULL, produce, (void *)&bufferState) != 0) {
-        fprintf(stderr, "Error creating producer thread\n");
-        exit(EXIT_FAILURE);
+        while (item_available == 0) {
+            if (consumed >= MAX_PRODUCED) {  // prevent deadlock
+                pthread_mutex_unlock(&item_queue_cond_lock);
+                pthread_exit(0);
+            }
+
+            printf("[%d] No item available. Waiting producers...\n", thread_id);
+            pthread_cond_wait(&cond_queue_full, &item_queue_cond_lock);
+        }
+
+        my_item = extract_from_queue(thread_id);
+
+        pthread_cond_signal(&cond_queue_empty);
+        pthread_mutex_unlock(&item_queue_cond_lock);
+        process_item(thread_id, my_item);
+	}
+
+    printf("[%d] Consumer exit...\n", thread_id);
+	pthread_exit(0);
+}
+
+int main(void) {
+	pthread_t producers[NUM_PRODUCERS];
+    pthread_t consumers[NUM_CONSUMERS];
+
+    item_available = 0;
+
+    pthread_cond_init(&cond_queue_empty, NULL);
+    pthread_cond_init(&cond_queue_full, NULL);
+    pthread_mutex_init(&item_queue_cond_lock, NULL);
+
+    for(int i = 0; i < NUM_PRODUCERS; i++) {
+        int *tid = malloc(sizeof(int));
+        *tid = i;
+
+        if (pthread_create(&producers[i], 0, (void *) producer, (void *) tid)) { 
+            printf("Error creating thread producer! Exiting! \n");
+            exit(0);
+        }
     }
 
-    if (pthread_create(&consumer, NULL, consume, (void *)&bufferState) != 0) {
-        fprintf(stderr, "Error creating consumer thread\n");
-        exit(EXIT_FAILURE);
+    for(int i = 0; i < NUM_CONSUMERS; i++) {
+        int *tid = malloc(sizeof(int));
+        *tid = i;
+
+        if (pthread_create(&consumers[i], 0, (void *) consumer, (void *) tid)) { 
+            printf("Error creating thread consumer! Exiting! \n");
+            exit(0);
+        }
     }
 
+    for(int i = 0; i < NUM_PRODUCERS; i++) {
+        pthread_join(producers[i], 0);
+    }
 
-    pthread_join(producer, NULL);
-    pthread_join(consumer, NULL);
+    for(int i = 0; i < NUM_CONSUMERS; i++) {
+        pthread_join(consumers[i], 0);
+    }
 
-    pthread_mutex_destroy(&mutex);
-    sem_destroy(&empty_count);
-    sem_destroy(&fill_count);
-
-    printf("Main thread exiting.\n");
-    return 0;
+	exit(0);	
 }
