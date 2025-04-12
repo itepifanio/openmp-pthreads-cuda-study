@@ -23,31 +23,19 @@ End Algorithm
 */
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
 #include <math.h>
 #include <time.h>
 #include "../include/log.h"
+#include "../include/helper.h"
+#include "../include/kmeans.h"
 
 #define MAX_ROWS 150
 #define MAX_COLUMNS 6
 #define NUM_FEATURES 4
 #define DEBUG 1
 
-int isNonNegativeInteger(const char *str)
-{
-    while (*str)
-    {
-        if (!isdigit(*str))
-        {
-            return 0;
-        }
-        str++;
-    }
-    return 1;
-}
-
-float **loadIris(const char *filename)
+// TODO: make a more generic csv loader function
+Dataframe loadIris(const char *filename)
 {
     FILE *file = fopen(filename, "r");
     if (!file)
@@ -85,18 +73,8 @@ float **loadIris(const char *filename)
     log_debug("Loaded %d rows", row);
 
     fclose(file);
-    return matrix;
-}
-
-float euclideanDistance(float *point1, float *point2, int numFeatures)
-{
-    float sum = 0.0;
-    for (int i = 0; i < numFeatures; i++)
-    {
-        float diff = point1[i] - point2[i];
-        sum += diff * diff;
-    }
-    return sqrt(sum);
+    Dataframe df = {matrix, MAX_ROWS, MAX_COLUMNS, NUM_FEATURES, 1, NUM_FEATURES};
+    return df;
 }
 
 int main(int argc, char *argv[])
@@ -122,61 +100,21 @@ int main(int argc, char *argv[])
 
     int k = atoi(argv[1]); // clusters
     int maxIter = atoi(argv[2]);
+
     log_debug("loading iris dataset...");
-    float **data = loadIris("Iris.csv");
+    Dataframe df = loadIris("Iris.csv");
     log_debug("Iris dataset loaded!");
 
-    log_debug("Running k-means with k=%d and maxIter=%d...", k, maxIter);
-
-    log_debug("Initializing centroids randomly...");
-    srand(time(NULL));
-    float **centroids = malloc(k * sizeof(float *));
-    for (int i = 0; i < k; i++)
-    {
-        int random_index = rand() % MAX_ROWS;
-        centroids[i] = malloc(4 * sizeof(float));
-        for (int j = 0; j < 4; j++)
-        {
-            centroids[i][j] = data[random_index][j];
-        }
-    }
-    log_debug("Centroids initialized:");
-    for (int i = 0; i < k; i++)
-    {
-        log_debug("Centroid %d: %f, %f, %f, %f", i, centroids[i][0], centroids[i][1], centroids[i][2], centroids[i][3]);
-    }
-    log_debug("Centroids initialized!");
-
-    log_debug("Starting k-means iterations...");
-    for (int i = 0; i < MAX_ROWS; i++)
-    {
-        float minDistance = INFINITY;
-        int closestCentroid = -1;
-        for (int j = 0; j < k; j++)
-        {
-            float distance = euclideanDistance(data[i], centroids[j], NUM_FEATURES);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                closestCentroid = j;
-            }
-        }
-
-        log_debug("Data point %d assigned to centroid %d", i, closestCentroid);
-    }
-
-
-    log_debug("K-means completed!");
+    kmeans(&df, k, maxIter);
 
     log_debug("Freeing memory...");
     for (int i = 0; i < MAX_ROWS; i++)
     {
-        if (data[i] != NULL)
+        if (df.data[i] != NULL)
         {
-            free(data[i]);
+            free(df.data[i]);
         }
     }
-    free(data);
 
     return 0;
 }
