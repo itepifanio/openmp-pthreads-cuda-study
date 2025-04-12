@@ -1,27 +1,3 @@
-/*
-Algorithm K-Means Clustering:
-
-1. Initialize centroids
-   - Randomly select k data points from the dataset as initial centroids.
-
-2. Repeat until convergence:
-   a. Assignment step:
-      - For each data point in the dataset:
-        i.  Calculate the distance between the data point and each centroid.
-        ii. Assign the data point to the nearest centroid.
-
-   b. Update step:
-      - For each centroid:
-        i.  Calculate the new centroid by taking the mean of all data points assigned to it.
-
-3. Convergence criteria:
-   - Check if the centroids have stopped moving (i.e., the changes in centroid positions are below a certain threshold).
-   - If centroids have converged, terminate the algorithm.
-   - If not, repeat steps 2a and 2b.
-
-End Algorithm
-*/
-
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
@@ -105,7 +81,7 @@ int main(int argc, char *argv[])
     Dataframe df = loadIris("Iris.csv");
     log_debug("Iris dataset loaded!");
 
-    kmeans(&df, k, maxIter);
+    kmeans(&df, k, maxIter, DEBUG);
 
     log_debug("Freeing memory...");
     for (int i = 0; i < MAX_ROWS; i++)
