@@ -1,7 +1,5 @@
-args = $(foreach a,$($(subst -,_,$1)_args),$(if $(value $a),$a="$($a)"))
-
 CC = gcc
-CFLAGS = -lpthread
+CFLAGS = -lpthread -lm -Iinclude -DLOG_USE_COLOR
 
 SRC_DIR = src
 BUILD_DIR = build
@@ -16,7 +14,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJ)
 	@mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) -o $@ $^ $(CFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(BUILD_DIR)

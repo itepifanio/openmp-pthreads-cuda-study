@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./bin/exec "$@"
+rm -f kmeans.log && make clean && make && ./bin/exec "$@"
