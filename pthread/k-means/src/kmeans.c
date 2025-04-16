@@ -28,6 +28,7 @@ End Algorithm
 
 #include "../include/log.h"
 #include "../include/helper.h"
+#include "../include/experiments.h"
 
 float **initCentroids(Dataframe *df, int k) {
     // Initialize centroids by randomly selecting k data points from the dataset
@@ -112,39 +113,6 @@ void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) 
     free(counts);
 
     log_debug("Centroids updated!");
-}
-
-void saveIterationData(float **centroids, int *assignments, Dataframe *df, int k, int iteration) {
-    // TODO: add which dataframe was used
-    char filename[100];
-    sprintf(filename, "experiments/iteration_%03d.csv", iteration);
-
-    FILE *file = fopen(filename, "w");
-    if (!file) {
-        log_error("Failed to open file for iteration data: %s", filename);
-        return;
-    }
-
-    fprintf(file, "point_id,SepalLengthCm,SepalWidthCm,PetalLengthCm,PetalWidthCm,cluster\n");
-
-    for (int i = 0; i < df->maxRows; i++) {
-        fprintf(file, "%d", i);
-        for (int j = 0; j < df->numFeatures; j++) {
-            fprintf(file, ",%f", df->data[i][j]);
-        }
-        fprintf(file, ",%d\n", assignments[i]);
-    }
-
-    for (int i = 0; i < k; i++) {
-        fprintf(file, "c%d", i);
-        for (int j = 0; j < df->numFeatures; j++) {
-            fprintf(file, ",%f", centroids[i][j]);
-        }
-        fprintf(file, ",%d\n", i);
-    }
-
-    fclose(file);
-    log_debug("Saved iteration %d data to %s", iteration, filename);
 }
 
 int hasConverged(

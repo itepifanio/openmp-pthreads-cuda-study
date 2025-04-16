@@ -9,7 +9,7 @@ import glob
 
 def load_iteration_files():
     # Get all iteration files
-    files = sorted(glob.glob('experiments/iteration_*.csv'))
+    files = sorted(glob.glob('experiments/*_iteration_*.csv'))
     return files
 
 def create_animation(features: tuple[int, int], output_gif: str):
@@ -29,7 +29,7 @@ def create_animation(features: tuple[int, int], output_gif: str):
 
     def update(frame):
         file = files[frame]
-        iteration = int(file.split('_')[1].split('.')[0])
+        iteration = int(file.split('_')[-1].split('.')[0])
 
         df = pd.read_csv(file)
 
@@ -39,8 +39,8 @@ def create_animation(features: tuple[int, int], output_gif: str):
 
         ax.clear()
 
-        x_col = df.columns[features[0] + 1]  # +1 to skip the ID column
-        y_col = df.columns[features[1] + 1]
+        x_col = df.columns[features[0] + 2]  # +1 to skip the ID and dataset column
+        y_col = df.columns[features[1] + 2]
 
         clusters = data_points['cluster'].unique()
         for cluster in clusters:

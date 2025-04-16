@@ -26,7 +26,13 @@ Dataframe loadIris(const char *filename)
         fclose(file);
     }
 
+    char **features = malloc(NUM_FEATURES * sizeof(char *));
     float **matrix = malloc(MAX_ROWS * sizeof(float *));
+
+    features[0] = "SepalLengthCm";
+    features[1] = "SepalWidthCm";
+    features[2] = "PetalLengthCm";
+    features[3] = "PetalWidthCm";
 
     int row = 0;
     while (row < MAX_ROWS && !feof(file))
@@ -51,7 +57,16 @@ Dataframe loadIris(const char *filename)
     log_debug("Loaded %d rows", row);
 
     fclose(file);
-    Dataframe df = {matrix, MAX_ROWS, MAX_COLUMNS, NUM_FEATURES, 1, NUM_FEATURES};
+    Dataframe df = {
+        "iris",
+        matrix,
+        features,
+        MAX_ROWS,
+        MAX_COLUMNS,
+        NUM_FEATURES,
+        1,
+        NUM_FEATURES
+    };
     return df;
 }
 
