@@ -44,4 +44,4 @@ You can build the project using the provided `run_experiments.sh` script:
 
 To use debug mode it's necessary to use Python to visualize the experiments. Create a
 python virtualenv and activate it, after that run `pip install -r requirements.txt`.
-After this setup run `./exec <clusters> <max_iterations> 1`.
+After this setup run `./exec <dataset> <clusters> <max_iterations> 1`.

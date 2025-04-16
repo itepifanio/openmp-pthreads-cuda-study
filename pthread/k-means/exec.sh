@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # remove old data
-rm ./*.gif && rm experiments/*.csv && rm -f kmeans.log
+rm -f ./*.gif && rm -f experiments/*.csv && rm -f kmeans.log
 
 # remove old executables and recompile
 make clean && make

@@ -22,7 +22,6 @@ def create_animation(features: tuple[int, int], output_gif: str):
     """
     files = load_iteration_files()
     if not files:
-        print("No iteration files found!")
         return
 
     # Setup the figure
@@ -69,7 +68,6 @@ def create_animation(features: tuple[int, int], output_gif: str):
 
         return ax,
 
-    # Create animation
     anim = FuncAnimation(
         fig,
         update,
@@ -82,7 +80,6 @@ def create_animation(features: tuple[int, int], output_gif: str):
     print(f"Animation saved as {output_gif}")
 
 if __name__ == "__main__":
-    # Create visualization using the first two features
     create_animation(features=(0, 1), output_gif='kmeans_animation_features_0_1.gif')
     create_animation(features=(0, 2), output_gif='kmeans_animation_features_0_2.gif')
     create_animation(features=(1, 2), output_gif='kmeans_animation_features_1_2.gif')
