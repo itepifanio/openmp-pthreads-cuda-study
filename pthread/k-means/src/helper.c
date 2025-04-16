@@ -1,18 +1,6 @@
 #include <math.h>
 #include <ctype.h>
 
-int isNonNegativeInteger(const char *str)
-{
-    while (*str)
-    {
-        if (!isdigit(*str))
-        {
-            return 0;
-        }
-        str++;
-    }
-    return 1;
-}
 
 float euclideanDistance(float *point1, float *point2, int numFeatures)
 {

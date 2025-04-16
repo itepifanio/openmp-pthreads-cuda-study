@@ -10,7 +10,6 @@ typedef struct {
     int endColumn;
 } Dataframe;
 
-int isNonNegativeInteger(const char *str);
 float euclideanDistance(float *point1, float *point2, int numFeatures);
 
 #endif

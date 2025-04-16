@@ -147,16 +147,40 @@ void saveIterationData(float **centroids, int *assignments, Dataframe *df, int k
     log_debug("Saved iteration %d data to %s", iteration, filename);
 }
 
+int hasConverged(
+    float **currentCentroids,
+    float **prevCentroids,
+    int k,
+    int numFeatures,
+    float threshold
+) {
+    for (int i = 0; i < k; i++) {
+        for (int j = 0; j < numFeatures; j++) {
+            if (fabs(currentCentroids[i][j] - prevCentroids[i][j]) > threshold) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
 void kmeans(Dataframe *df, int k, int maxIter, int debug) {
+    const float CONVERGENCE_THRESHOLD = 1e-4;
+
     log_debug("Running k-means with k=%d and maxIter=%d...", k, maxIter);
 
-    log_debug("Starting k-means iterations...");
-
     float **centroids = initCentroids(df, k);
+
+    // TODO: separate function to allocate memory for prevCentroids
+    float **prevCentroids = malloc(k * sizeof(float *));
+    for (int i = 0; i < k; i++) {
+        prevCentroids[i] = malloc(df->numFeatures * sizeof(float));
+    }
+
     int *assignments = NULL;
     int iteration = 0;
 
-    while(maxIter > 0) // TODO: fix convergence
+    while(maxIter > 0)
     {
         assignments = initAssignments(df, centroids, k);
 
@@ -164,7 +188,18 @@ void kmeans(Dataframe *df, int k, int maxIter, int debug) {
             saveIterationData(centroids, assignments, df, k, iteration);
         }
 
+        // save previous centroids before updating
+        for (int i = 0; i < k; i++) {
+            for (int j = 0; j < df->numFeatures; j++) {
+                prevCentroids[i][j] = centroids[i][j];
+            }
+        }
         updateCentroids(df, centroids, assignments, k);
+
+        if (hasConverged(centroids, prevCentroids, k, df->numFeatures, CONVERGENCE_THRESHOLD)) {
+            log_debug("Convergence achieved after %d iterations.", iteration + 1);
+            break;
+        }
 
         log_debug("Max iterations left: %d", --maxIter);
         iteration++;
