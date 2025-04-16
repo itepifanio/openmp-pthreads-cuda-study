@@ -12,6 +12,12 @@ typedef struct {
     int endColumn;
 } Dataframe;
 
+typedef struct {
+    int number;
+    float executionTime;
+    int convergenceIteration;
+} Experiment;
+
 float euclideanDistance(float *point1, float *point2, int numFeatures);
 
 #endif
