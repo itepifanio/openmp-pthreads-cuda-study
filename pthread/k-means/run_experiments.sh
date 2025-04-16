@@ -7,4 +7,4 @@ rm -f ./*.gif && rm -f experiments/*.csv && rm -f kmeans.log
 make clean && make
 
 # run the program with debug false
-./bin/exec all "$@" 0
+./bin/exec 30 all "$@" 0

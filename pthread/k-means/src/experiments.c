@@ -6,9 +6,22 @@
 #include "../include/helper.h"
 #include "../include/log.h"
 
-void saveIterationData(float **centroids, int *assignments, Dataframe *df, int k, int iteration) {
+void saveIterationData(
+    float **centroids,
+    int *assignments,
+    Dataframe *df,
+    int k,
+    int iteration,
+    int expNumber
+) {
     char filename[100];
-    sprintf(filename, "experiments/%s_iteration_%03d.csv", df->name, iteration);
+    sprintf(
+        filename,
+        "experiments/%s_experiment_%d_iteration_%03d.csv",
+        df->name,
+        expNumber,
+        iteration
+    );
 
     FILE *file = fopen(filename, "w");
     if (!file) {
