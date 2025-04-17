@@ -30,9 +30,9 @@ End Algorithm
 #include "../include/helper.h"
 #include "../include/experiments.h"
 
-float **initCentroids(Dataframe *df, int k) {
+float **initCentroids(Dataframe *df, int k, int expNumber) {
     // Initialize centroids by randomly selecting k data points from the dataset
-    srand(time(NULL));
+    srand(time(NULL) + expNumber);
 
     log_debug("Initializing centroids randomly...");
     float **centroids = malloc(k * sizeof(float *));
@@ -132,12 +132,12 @@ int hasConverged(
     return 1;
 }
 
-void kmeans(Dataframe *df, int k, int maxIter, int debug) {
+void kmeans(Dataframe *df, int k, int maxIter, int expNumber, int debug) {
     const float CONVERGENCE_THRESHOLD = 1e-4;
 
     log_debug("Running k-means with k=%d and maxIter=%d...", k, maxIter);
 
-    float **centroids = initCentroids(df, k);
+    float **centroids = initCentroids(df, k, expNumber);
 
     // TODO: separate function to allocate memory for prevCentroids
     float **prevCentroids = malloc(k * sizeof(float *));
@@ -153,7 +153,7 @@ void kmeans(Dataframe *df, int k, int maxIter, int debug) {
         assignments = initAssignments(df, centroids, k);
 
         if(debug) {
-            saveIterationData(centroids, assignments, df, k, iteration);
+            saveIterationData(centroids, assignments, df, k, iteration, expNumber);
         }
 
         // save previous centroids before updating
