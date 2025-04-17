@@ -1,6 +1,6 @@
-# OpenMP and Cuda study
+# OpenMP, PThreads and Cuda study
 
-Parallel programming with OpenMP and Cuda.
+Parallel programming with OpenMP, PThreads and Cuda.
 
 ## Building the Project
 
