@@ -40,4 +40,8 @@ rm -f ./*.gif && rm -f experiments/*.csv && rm -f kmeans.log
 make clean && make
 
 # run the program with debug false
-./bin/exec 30 all "$@" 0
+# <program> <dataset> <number-execution> <k> <maxIter> <debug>
+# <k> contains the class number of the dataset
+# <maxIter> contains the number of rows in the dataset
+./bin/exec iris 30 3 150 0
+./bin/exec rice 30 2 3806 0

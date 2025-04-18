@@ -52,9 +52,9 @@ int main(int argc, char *argv[])
         log_add_stream_handler(DEFAULT, LOG_INFO, "console");
     }
 
-    Experiment experiments[numExp];
+    Experiment *experiments = malloc((numExp) * sizeof(*experiments));
 
-    log_info("loading dataset...");
+    log_info("loading %s dataset...", dataset);
     Dataframe df = loadDataset(dataset);
     log_info("Dataset loaded!");
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     }
 
     if(! debug) {
-        saveExperiment(&experiments, numExp, df.name);
+        saveExperiment(experiments, numExp, df.name);
     }
 
     log_debug("Freeing memory...");

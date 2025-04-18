@@ -3,4 +3,7 @@
 experiments/*.csv
 venv
 *.gif
+*.zip
+data
 !experiments/iris_experiment_result.csv
+!experiments/rice_experiment_result.csv

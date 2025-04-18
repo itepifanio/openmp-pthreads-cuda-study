@@ -33,6 +33,7 @@ void saveIterationData(
     for (int i = 0; i < df->numFeatures; i++) {
         totalFeatureLength += strlen(df->features[i]) + 1;
     }
+
     char *features = malloc(totalFeatureLength * sizeof(char *));
     features[0] = '\0';
     for(int i = 0; i < df->numFeatures; i++) {
@@ -62,8 +63,9 @@ void saveIterationData(
         fprintf(file, ",%d\n", i);
     }
 
-    fclose(file);
     log_debug("Saved iteration %d data to %s", iteration, filename);
+
+    fclose(file);
 }
 
 void saveExperiment(Experiment *experiments, int numberExperiments, char *dataframe) {

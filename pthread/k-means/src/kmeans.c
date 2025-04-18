@@ -82,7 +82,6 @@ void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) 
 
     float **newCentroids = malloc(k * sizeof(float *));
     int *counts = calloc(k, sizeof(int));
-
     for (int i = 0; i < k; i++) {
         newCentroids[i] = calloc(df->numFeatures, sizeof(float));
     }
@@ -133,7 +132,7 @@ int hasConverged(
 }
 
 void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, int debug) {
-    const float CONVERGENCE_THRESHOLD = 1e-4;
+    const float CONVERGENCE_THRESHOLD = 1e-3;
 
     clock_t start, end;
     double cpu_time_used;
@@ -176,8 +175,6 @@ void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, i
 
         log_debug("Max iterations left: %d", --maxIter);
         iteration++;
-
-        free(assignments);
     }
 
     end = clock();
@@ -191,6 +188,7 @@ void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, i
         free(centroids[i]);
     }
     free(centroids);
+    free(assignments);
 
     log_debug("K-means completed!");
 }
