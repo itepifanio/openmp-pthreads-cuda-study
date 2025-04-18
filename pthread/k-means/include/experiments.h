@@ -10,4 +10,10 @@ void saveIterationData(
     int expNumber
 );
 
+void saveExperiment(
+    Experiment *experiments, 
+    int numberExperiments, 
+    char *dataframe
+);
+
 #endif

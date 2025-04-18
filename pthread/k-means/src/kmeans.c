@@ -132,8 +132,13 @@ int hasConverged(
     return 1;
 }
 
-void kmeans(Dataframe *df, int k, int maxIter, int expNumber, int debug) {
+void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, int debug) {
     const float CONVERGENCE_THRESHOLD = 1e-4;
+
+    clock_t start, end;
+    double cpu_time_used;
+     
+    start = clock();
 
     log_debug("Running k-means with k=%d and maxIter=%d...", k, maxIter);
 
@@ -174,6 +179,13 @@ void kmeans(Dataframe *df, int k, int maxIter, int expNumber, int debug) {
 
         free(assignments);
     }
+
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+    exp->convergenceIteration = iteration;
+    exp->executionTime = cpu_time_used;
+    exp->number = expNumber;
 
     for (int i = 0; i < k; i++) {
         free(centroids[i]);

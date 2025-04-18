@@ -65,3 +65,31 @@ void saveIterationData(
     fclose(file);
     log_debug("Saved iteration %d data to %s", iteration, filename);
 }
+
+void saveExperiment(Experiment *experiments, int numberExperiments, char *dataframe) {
+    char filename[100];
+    sprintf(
+        filename,
+        "experiments/%s_experiment_result.csv",
+        dataframe
+    );
+
+    FILE *file = fopen(filename, "w");
+    if (!file) {
+        log_error("Failed to open file for iteration data: %s", filename);
+        return;
+    }
+
+    fprintf(file, "iteration,dataset,time,converged_at\n");
+    for(int i = 0; i < numberExperiments; i++) {
+        fprintf(
+            file, 
+            "%d,%s,%f,%d\n", 
+            i, 
+            dataframe, 
+            experiments[i].executionTime, 
+            experiments[i].convergenceIteration
+        );
+    }
+    fclose(file);
+}

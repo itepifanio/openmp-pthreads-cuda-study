@@ -3,3 +3,4 @@
 experiments/*.csv
 venv
 *.gif
+!experiments/iris_experiment_result.csv

@@ -5,6 +5,7 @@
 #include "../include/helper.h"
 #include "../include/kmeans.h"
 #include "../include/dataset.h"
+#include "../include/experiments.h"
 
 int main(int argc, char *argv[])
 {
@@ -51,6 +52,8 @@ int main(int argc, char *argv[])
         log_add_stream_handler(DEFAULT, LOG_INFO, "console");
     }
 
+    Experiment experiments[numExp];
+
     log_info("loading dataset...");
     Dataframe df = loadDataset(dataset);
     log_info("Dataset loaded!");
@@ -58,9 +61,17 @@ int main(int argc, char *argv[])
     log_info("Running k-means...");
     for(int i = 0; i < numExp; i++){
         log_debug("Running experiment %d...\n", i);
-        kmeans(&df, k, maxIter, i, debug);
+        kmeans(&df, &experiments[i], k, maxIter, i, debug);
     }
     log_info("k-means finished!");
+
+    for(int i = 0; i < numExp; i++ && debug) {
+        log_info("Experiment %d took %f", i+1, experiments[i].executionTime);
+    }
+
+    if(! debug) {
+        saveExperiment(&experiments, numExp, df.name);
+    }
 
     log_debug("Freeing memory...");
     for (int i = 0; i < df.maxRows; i++)
