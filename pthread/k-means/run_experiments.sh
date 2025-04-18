@@ -46,3 +46,4 @@ make clean && make
 ./bin/exec iris 30 3 150 0
 ./bin/exec rice 30 2 3806 0
 ./bin/exec htru2 30 2 17898 0
+./bin/exec wesad 30 3 4558554 0

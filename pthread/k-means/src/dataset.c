@@ -209,6 +209,73 @@ Dataframe loadHtru2(const char *filename) {
     return df;
 }
 
+Dataframe loadWset(const char *filename)
+{
+    const int MAX_ROWS = 4558554;
+    const int MAX_COLUMNS = 6;
+    const int NUM_FEATURES = 6;
+
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Error while opening the file");
+        exit(EXIT_FAILURE);
+    }
+
+    char buffer[512];
+
+    while (fgets(buffer, sizeof(buffer), file)) {
+        if (strncmp(buffer, "# EndOfHeader", 13) == 0) {
+            break;
+        }
+    }
+
+    float **matrix = malloc(MAX_ROWS * sizeof(float *));
+    char **features = malloc(NUM_FEATURES * sizeof(char *));
+
+    features[0] = "ECG";
+    features[1] = "EDA";
+    features[2] = "EMG";
+    features[3] = "TEMP";
+    features[4] = "XYZ";
+    features[5] = "RESPIRATION";
+
+    int row = 0;
+    while (row < MAX_ROWS && fgets(buffer, sizeof(buffer), file)) {
+        int nSeq, DI;
+        int ch[8];
+        int count = sscanf(buffer, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
+            &nSeq, &DI,
+            &ch[0], &ch[1], &ch[2], &ch[3], &ch[4], &ch[5], &ch[6], &ch[7]
+        );
+
+        if (count != 10) {
+            continue;
+        }
+
+        matrix[row] = malloc(NUM_FEATURES * sizeof(float));
+        for (int i = 0; i < NUM_FEATURES; i++) {
+            matrix[row][i] = (float)ch[i];
+        }
+        row++;
+    }
+
+    fclose(file);
+
+    log_debug("Loaded %d rows from WESAD dataset", row);
+
+    Dataframe df = {
+        "wesad",
+        matrix,
+        features,
+        row,
+        MAX_COLUMNS,
+        NUM_FEATURES,
+        0,
+        NUM_FEATURES
+    };
+    return df;
+}
+
 Dataframe loadDataset(const char *datasetName)
 {
     if (strcmp(datasetName, "iris") == 0) {
@@ -223,6 +290,10 @@ Dataframe loadDataset(const char *datasetName)
         log_debug("Loading htru2 dataset...");
 
         return loadHtru2("data/htru2/HTRU_2.csv");
+    } else if (strcmp(datasetName, "wesad") == 0) {
+        log_debug("Loading wesad dataset...");
+
+        return loadWset("data/wesad/WESAD/S4/S4_respiban.txt");
     } else {
         log_error("Unknown dataset: %s\n", datasetName);
         exit(EXIT_FAILURE);
