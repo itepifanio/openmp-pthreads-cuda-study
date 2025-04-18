@@ -7,3 +7,4 @@ venv
 data
 !experiments/iris_experiment_result.csv
 !experiments/rice_experiment_result.csv
+!experiments/htru2_experiment_result.csv

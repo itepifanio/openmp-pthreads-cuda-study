@@ -45,3 +45,4 @@ make clean && make
 # <maxIter> contains the number of rows in the dataset
 ./bin/exec iris 30 3 150 0
 ./bin/exec rice 30 2 3806 0
+./bin/exec htru2 30 2 17898 0
