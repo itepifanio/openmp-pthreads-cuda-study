@@ -52,10 +52,9 @@ float **initCentroids(Dataframe *df, int k, int expNumber) {
     return centroids;
 }
 
-int *initAssignments(Dataframe *df, float **centroids, int k) {
+int *updateAssignments(Dataframe *df, float **centroids, int k, int *assignments) {
     // assign each data point to the nearest centroid
-    log_debug("Initializing assignments...");
-    int *assignments = malloc(df->maxRows * sizeof(int));
+    log_debug("Updating assignments...");
 
     for (int i = 0; i < df->maxRows; i++)
     {
@@ -136,7 +135,7 @@ void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, i
 
     clock_t start, end;
     double cpu_time_used;
-     
+
     start = clock();
 
     log_debug("Running k-means with k=%d and maxIter=%d...", k, maxIter);
@@ -149,12 +148,12 @@ void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, i
         prevCentroids[i] = malloc(df->numFeatures * sizeof(float));
     }
 
-    int *assignments = NULL;
+    int *assignments = malloc(df->maxRows * sizeof(int));
     int iteration = 0;
 
     while(maxIter > 0)
     {
-        assignments = initAssignments(df, centroids, k);
+        updateAssignments(df, centroids, k, assignments);
 
         if(debug) {
             saveIterationData(centroids, assignments, df, k, iteration, expNumber);
