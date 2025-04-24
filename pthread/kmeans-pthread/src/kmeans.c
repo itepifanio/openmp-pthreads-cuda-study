@@ -36,7 +36,8 @@ typedef struct {
     int end;
     float **data;
     int numFeatures;
-    int *centroids;
+    float **centroids;
+    int *assignments;
     int k;
 } Slice; // slice of the dataframe
 
@@ -62,23 +63,25 @@ float **initCentroids(Dataframe *df, int k, int expNumber) {
     return centroids;
 }
 
-float closestCentroid(Slice *slice) {
-    int *assignments = malloc((slice->end - slice->start) * sizeof(int));
+void *findNearestCentroids(void *arg) {
+    Slice *slice = (Slice *)arg;
 
     for(int i = slice->start; i < slice->end; i++) {
         float minDistance = INFINITY;
         int closestCentroid = -1;
 
-        for (int j = 0; j < slice->k; j++)
-        {
+        for (int j = 0; j < slice->k; j++) {
             float distance = euclideanDistance(slice->data[i], slice->centroids[j], slice->numFeatures);
-            if (distance < minDistance)
-            {
+            if (distance < minDistance) {
                 minDistance = distance;
                 closestCentroid = j;
             }
         }
+
+        slice->assignments[i] = closestCentroid;
     }
+
+    return NULL;
 }
 
 int *initAssignments(Dataframe *df, float **centroids, int k, int numThreads) {
@@ -86,32 +89,39 @@ int *initAssignments(Dataframe *df, float **centroids, int k, int numThreads) {
     // split the number of dataframes per thread
     log_debug("Initializing assignments...");
     int *assignments = malloc(df->maxRows * sizeof(int));
-    
-    // slice the rows
-    int numSlices = df->maxRows/numThreads;
-    int lastThread = df->maxRows % numThreads;
-    Slice *slices = malloc((numThreads) * sizeof(*slices));
-    for(int i = 0; i < numThreads; i++) {
-        Slice slice = {};
-        slices[i] = slice;
-    }
 
-    for (int i = 0; i < df->maxRows; i++)
-    {
-        float minDistance = INFINITY;
-        int closestCentroid = -1;
-        for (int j = 0; j < k; j++)
-        {
-            float distance = euclideanDistance(df->data[i], centroids[j], df->numFeatures);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                closestCentroid = j;
-            }
+    // slice the rows
+    int rowsPerThread = df->maxRows/numThreads;
+    int remainingRows = df->maxRows % numThreads;
+    Slice *slices = malloc((numThreads) * sizeof(*slices));
+    pthread_t *threads = malloc(numThreads * sizeof(pthread_t));
+    int startRow = 0;
+
+    for(int i = 0; i < numThreads; i++) {
+        int rowsToProcess = rowsPerThread;
+        if (i < remainingRows) {
+            rowsToProcess++;
         }
 
-        assignments[i] = closestCentroid;
+        slices[i].start = startRow;
+        slices[i].end = startRow + rowsToProcess;
+        slices[i].data = df->data;
+        slices[i].centroids = centroids;
+        slices[i].numFeatures = df->numFeatures;
+        slices[i].k = k;
+        slices[i].assignments = assignments;
+
+        pthread_create(&threads[i], NULL, findNearestCentroids, &slices[i]);
+
+        startRow += rowsToProcess;
     }
+
+    for (int i = 0; i < numThreads; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    free(threads);
+    free(slices);
 
     return assignments;
 }
@@ -171,19 +181,19 @@ int hasConverged(
 }
 
 void kmeans(
-    Dataframe *df, 
-    Experiment *exp, 
-    int k, 
-    int maxIter, 
-    int expNumber, 
-    int numThreads, 
+    Dataframe *df,
+    Experiment *exp,
+    int k,
+    int maxIter,
+    int expNumber,
+    int numThreads,
     int debug
 ) {
     const float CONVERGENCE_THRESHOLD = 1e-3;
 
     clock_t start, end;
     double cpu_time_used;
-     
+
     start = clock();
 
     log_debug("Running k-means with k=%d and maxIter=%d...", k, maxIter);
@@ -201,7 +211,7 @@ void kmeans(
 
     while(maxIter > 0)
     {
-        assignments = initAssignments(df, centroids, k);
+        assignments = initAssignments(df, centroids, k, numThreads);
 
         if(debug) {
             saveIterationData(centroids, assignments, df, k, iteration, expNumber);
@@ -233,9 +243,11 @@ void kmeans(
 
     for (int i = 0; i < k; i++) {
         free(centroids[i]);
+        free(prevCentroids[i]);
     }
     free(centroids);
     free(assignments);
+    free(prevCentroids);
 
     log_debug("K-means completed!");
 }
