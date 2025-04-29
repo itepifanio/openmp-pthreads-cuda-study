@@ -14,7 +14,7 @@ typedef struct {
 
 typedef struct {
     int number;
-    float executionTime;
+    double executionTime;
     int convergenceIteration;
 } Experiment;
 

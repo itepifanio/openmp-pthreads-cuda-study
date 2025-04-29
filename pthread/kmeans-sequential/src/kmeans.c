@@ -25,6 +25,7 @@ End Algorithm
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <omp.h>
 
 #include "../include/log.h"
 #include "../include/helper.h"
@@ -133,10 +134,10 @@ int hasConverged(
 void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, int debug) {
     const float CONVERGENCE_THRESHOLD = 1e-3;
 
-    clock_t start, end;
-    double cpu_time_used;
+    double start, end;
+    double wall_time_used;
 
-    start = clock();
+    start = omp_get_wtime();
 
     log_debug("Running k-means with k=%d and maxIter=%d...", k, maxIter);
 
@@ -176,11 +177,11 @@ void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, i
         iteration++;
     }
 
-    end = clock();
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    end = omp_get_wtime();
+    wall_time_used = end - start;
 
     exp->convergenceIteration = iteration;
-    exp->executionTime = cpu_time_used;
+    exp->executionTime = wall_time_used;
     exp->number = expNumber;
 
     for (int i = 0; i < k; i++) {

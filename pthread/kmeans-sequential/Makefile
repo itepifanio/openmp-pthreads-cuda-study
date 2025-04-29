@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -lpthread -lm -Iinclude -DLOG_USE_COLOR
+CFLAGS = -fopenmp -lm -Iinclude -DLOG_USE_COLOR -O3
 
 SRC_DIR = src
 BUILD_DIR = build
