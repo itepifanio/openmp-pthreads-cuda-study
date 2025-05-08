@@ -25,6 +25,8 @@ End Algorithm
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <omp.h>
+#include <string.h>
 
 #include "../include/log.h"
 #include "../include/helper.h"
@@ -65,6 +67,8 @@ int *initAssignments(Dataframe *df, float **centroids, int k) {
         float minDistance = INFINITY;
         int closestCentroid = -1;
 
+        // TODO: check how performance behaves without simd
+        // k is small, not sure if it's worth it to paralell
         for (int j = 0; j < k; j++)
         {
             float sum = 0.0f;
@@ -90,25 +94,52 @@ int *initAssignments(Dataframe *df, float **centroids, int k) {
     return assignments;
 }
 
+// TODO: avoid reallocating the memory
 void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) {
     log_debug("Updating centroids...");
 
+    // allocate the newCentroids
     float **newCentroids = malloc(k * sizeof(float *));
     int *counts = calloc(k, sizeof(int));
     for (int i = 0; i < k; i++) {
         newCentroids[i] = calloc(df->numFeatures, sizeof(float));
     }
 
-    // Sum up data points assigned to each centroid
-    for (int i = 0; i < df->maxRows; i++) {
-        int cluster = assignments[i];
-        counts[cluster]++;
-        for (int j = 0; j < df->numFeatures; j++) {
-            newCentroids[cluster][j] += df->data[i][j];
+    // each thread will work with a different memory to work with
+    // this section allocates them
+    int num_threads = omp_get_max_threads();
+    float ***thread_sums = malloc(num_threads * sizeof(float **));
+    int **thread_counts = malloc(num_threads * sizeof(int *));
+
+    for (int t = 0; t < num_threads; t++) {
+        thread_counts[t] = calloc(k, sizeof(int));
+        thread_sums[t] = malloc(k * sizeof(float *));
+        for (int i = 0; i < k; i++) {
+            thread_sums[t][i] = calloc(df->numFeatures, sizeof(float));
         }
     }
 
-    // Calculate the mean for each centroid
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < df->maxRows; i++) {
+        int tid = omp_get_thread_num();
+        int cluster = assignments[i];
+        thread_counts[tid][cluster]++;
+
+        for (int j = 0; j < df->numFeatures; j++) {
+            thread_sums[tid][cluster][j] += df->data[i][j];
+        }
+    }
+
+    // join the parallelized thread work
+    for (int t = 0; t < num_threads; t++) {
+        for (int i = 0; i < k; i++) {
+            counts[i] += thread_counts[t][i];
+            for (int j = 0; j < df->numFeatures; j++) {
+                newCentroids[i][j] += thread_sums[t][i][j];
+            }
+        }
+    }
+
     for (int i = 0; i < k; i++) {
         if (counts[i] > 0) {
             for (int j = 0; j < df->numFeatures; j++) {
@@ -117,7 +148,16 @@ void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) 
         }
     }
 
-    // Free temporary storage
+    for (int t = 0; t < num_threads; t++) {
+        for (int i = 0; i < k; i++) {
+            free(thread_sums[t][i]);
+        }
+        free(thread_sums[t]);
+        free(thread_counts[t]);
+    }
+    free(thread_sums);
+    free(thread_counts);
+
     for (int i = 0; i < k; i++) {
         free(newCentroids[i]);
     }
@@ -126,6 +166,7 @@ void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) 
 
     log_debug("Centroids updated!");
 }
+
 
 int hasConverged(
     float **currentCentroids,
