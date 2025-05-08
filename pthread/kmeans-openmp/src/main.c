@@ -7,8 +7,6 @@
 #include "../include/dataset.h"
 #include "../include/experiments.h"
 
-#define NUM_THREADS 8
-
 int main(int argc, char *argv[])
 {
     int debug = 0; // debug off
@@ -63,7 +61,7 @@ int main(int argc, char *argv[])
     log_info("Running k-means...");
     for(int i = 0; i < numExp; i++){
         log_debug("Running experiment %d...\n", i);
-        kmeans(&df, &experiments[i], k, maxIter, i, NUM_THREADS, debug);
+        kmeans(&df, &experiments[i], k, maxIter, i, debug);
     }
     log_info("k-means finished!");
 

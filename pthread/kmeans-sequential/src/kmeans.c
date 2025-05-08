@@ -132,7 +132,7 @@ int hasConverged(
 }
 
 void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, int debug) {
-    const float CONVERGENCE_THRESHOLD = 1e-3;
+    const float CONVERGENCE_THRESHOLD = 1e-6;
 
     double start, end;
     double wall_time_used;

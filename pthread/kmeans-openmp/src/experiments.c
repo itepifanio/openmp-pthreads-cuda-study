@@ -34,6 +34,12 @@ void saveIterationData(
         totalFeatureLength += strlen(df->features[i]) + 1;
     }
 
+    if(totalFeatureLength == 0) {
+        log_error("No features found in dataframe");
+        fclose(file);
+        return;
+    }
+
     char *features = malloc(totalFeatureLength * sizeof(char *));
     features[0] = '\0';
     for(int i = 0; i < df->numFeatures; i++) {
@@ -85,11 +91,11 @@ void saveExperiment(Experiment *experiments, int numberExperiments, char *datafr
     fprintf(file, "iteration,dataset,time,converged_at\n");
     for(int i = 0; i < numberExperiments; i++) {
         fprintf(
-            file, 
-            "%d,%s,%f,%d\n", 
-            i, 
-            dataframe, 
-            experiments[i].executionTime, 
+            file,
+            "%d,%s,%f,%d\n",
+            i,
+            dataframe,
+            experiments[i].executionTime,
             experiments[i].convergenceIteration
         );
     }

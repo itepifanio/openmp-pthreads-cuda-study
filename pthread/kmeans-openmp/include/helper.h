@@ -18,6 +18,7 @@ typedef struct {
     int convergenceIteration;
 } Experiment;
 
-float euclideanDistance(float *point1, float *point2, int numFeatures);
+// Removed so vectorize with simd
+// float euclideanDistance(float *point1, float *point2, int numFeatures);
 
 #endif

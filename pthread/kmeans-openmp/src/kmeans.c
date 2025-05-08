@@ -25,21 +25,12 @@ End Algorithm
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
-#include <pthread.h>
+#include <omp.h>
+#include <string.h>
 
 #include "../include/log.h"
 #include "../include/helper.h"
 #include "../include/experiments.h"
-
-typedef struct {
-    int start;
-    int end;
-    float **data;
-    int numFeatures;
-    float **centroids;
-    int *assignments;
-    int k;
-} Slice; // slice of the dataframe
 
 float **initCentroids(Dataframe *df, int k, int expNumber) {
     // Initialize centroids by randomly selecting k data points from the dataset
@@ -63,88 +54,92 @@ float **initCentroids(Dataframe *df, int k, int expNumber) {
     return centroids;
 }
 
-void *findNearestCentroids(void *arg) {
-    Slice *slice = (Slice *)arg;
+int *initAssignments(Dataframe *df, float **centroids, int k) {
+    // assign each data point to the nearest centroid
+    log_debug("Initializing assignments...");
+    int *assignments = malloc(df->maxRows * sizeof(int));
 
-    for(int i = slice->start; i < slice->end; i++) {
+    // k has fixed size, features too, the distance calculation is uniform
+    // since there's no imbalance we're using static
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < df->maxRows; i++)
+    {
         float minDistance = INFINITY;
         int closestCentroid = -1;
 
-        for (int j = 0; j < slice->k; j++) {
-            float distance = euclideanDistance(slice->data[i], slice->centroids[j], slice->numFeatures);
-            if (distance < minDistance) {
+        // TODO: check how performance behaves without simd
+        // k is small, not sure if it's worth it to paralell
+        for (int j = 0; j < k; j++)
+        {
+            float sum = 0.0f;
+            #pragma omp simd reduction(+:sum)
+            for (int l = 0; l < df->numFeatures; l++)
+            {
+                float diff = df->data[i][l] - centroids[j][l];
+                sum += diff * diff;
+            }
+            
+            float distance = sqrt(sum);
+
+            if (distance < minDistance)
+            {
                 minDistance = distance;
                 closestCentroid = j;
             }
         }
 
-        slice->assignments[i] = closestCentroid;
+        assignments[i] = closestCentroid;
     }
-
-    return NULL;
-}
-
-int *initAssignments(Dataframe *df, float **centroids, int k, int numThreads) {
-    // assign each data point to the nearest centroid
-    // split the number of dataframes per thread
-    log_debug("Initializing assignments...");
-    int *assignments = malloc(df->maxRows * sizeof(int));
-
-    // slice the rows
-    int rowsPerThread = df->maxRows/numThreads;
-    int remainingRows = df->maxRows % numThreads;
-    Slice *slices = malloc((numThreads) * sizeof(*slices));
-    pthread_t *threads = malloc(numThreads * sizeof(pthread_t));
-    int startRow = 0;
-
-    for(int i = 0; i < numThreads; i++) {
-        int rowsToProcess = rowsPerThread;
-        if (i < remainingRows) {
-            rowsToProcess++;
-        }
-
-        slices[i].start = startRow;
-        slices[i].end = startRow + rowsToProcess;
-        slices[i].data = df->data;
-        slices[i].centroids = centroids;
-        slices[i].numFeatures = df->numFeatures;
-        slices[i].k = k;
-        slices[i].assignments = assignments;
-
-        pthread_create(&threads[i], NULL, findNearestCentroids, &slices[i]);
-
-        startRow += rowsToProcess;
-    }
-
-    for (int i = 0; i < numThreads; i++) {
-        pthread_join(threads[i], NULL);
-    }
-
-    free(threads);
-    free(slices);
 
     return assignments;
 }
 
+// TODO: avoid reallocating the memory
 void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) {
     log_debug("Updating centroids...");
 
+    // allocate the newCentroids
     float **newCentroids = malloc(k * sizeof(float *));
     int *counts = calloc(k, sizeof(int));
     for (int i = 0; i < k; i++) {
         newCentroids[i] = calloc(df->numFeatures, sizeof(float));
     }
 
-    // Sum up data points assigned to each centroid
-    for (int i = 0; i < df->maxRows; i++) {
-        int cluster = assignments[i];
-        counts[cluster]++;
-        for (int j = 0; j < df->numFeatures; j++) {
-            newCentroids[cluster][j] += df->data[i][j];
+    // each thread will work with a different memory to work with
+    // this section allocates them
+    int num_threads = omp_get_max_threads();
+    float ***thread_sums = malloc(num_threads * sizeof(float **));
+    int **thread_counts = malloc(num_threads * sizeof(int *));
+
+    for (int t = 0; t < num_threads; t++) {
+        thread_counts[t] = calloc(k, sizeof(int));
+        thread_sums[t] = malloc(k * sizeof(float *));
+        for (int i = 0; i < k; i++) {
+            thread_sums[t][i] = calloc(df->numFeatures, sizeof(float));
         }
     }
 
-    // Calculate the mean for each centroid
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < df->maxRows; i++) {
+        int tid = omp_get_thread_num();
+        int cluster = assignments[i];
+        thread_counts[tid][cluster]++;
+
+        for (int j = 0; j < df->numFeatures; j++) {
+            thread_sums[tid][cluster][j] += df->data[i][j];
+        }
+    }
+
+    // join the parallelized thread work
+    for (int t = 0; t < num_threads; t++) {
+        for (int i = 0; i < k; i++) {
+            counts[i] += thread_counts[t][i];
+            for (int j = 0; j < df->numFeatures; j++) {
+                newCentroids[i][j] += thread_sums[t][i][j];
+            }
+        }
+    }
+
     for (int i = 0; i < k; i++) {
         if (counts[i] > 0) {
             for (int j = 0; j < df->numFeatures; j++) {
@@ -153,7 +148,16 @@ void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) 
         }
     }
 
-    // Free temporary storage
+    for (int t = 0; t < num_threads; t++) {
+        for (int i = 0; i < k; i++) {
+            free(thread_sums[t][i]);
+        }
+        free(thread_sums[t]);
+        free(thread_counts[t]);
+    }
+    free(thread_sums);
+    free(thread_counts);
+
     for (int i = 0; i < k; i++) {
         free(newCentroids[i]);
     }
@@ -162,6 +166,7 @@ void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) 
 
     log_debug("Centroids updated!");
 }
+
 
 int hasConverged(
     float **currentCentroids,
@@ -180,21 +185,13 @@ int hasConverged(
     return 1;
 }
 
-void kmeans(
-    Dataframe *df,
-    Experiment *exp,
-    int k,
-    int maxIter,
-    int expNumber,
-    int numThreads,
-    int debug
-) {
-    const float CONVERGENCE_THRESHOLD = 1e-3;
+void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, int debug) {
+    const float CONVERGENCE_THRESHOLD = 1e-6;
 
-    clock_t start, end;
-    double cpu_time_used;
-
-    start = clock();
+    double start, end;
+    double wall_time_used;
+     
+    start = omp_get_wtime();
 
     log_debug("Running k-means with k=%d and maxIter=%d...", k, maxIter);
 
@@ -211,7 +208,7 @@ void kmeans(
 
     while(maxIter > 0)
     {
-        assignments = initAssignments(df, centroids, k, numThreads);
+        assignments = initAssignments(df, centroids, k);
 
         if(debug) {
             saveIterationData(centroids, assignments, df, k, iteration, expNumber);
@@ -234,20 +231,18 @@ void kmeans(
         iteration++;
     }
 
-    end = clock();
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    end = omp_get_wtime();
+    wall_time_used = end - start;
 
     exp->convergenceIteration = iteration;
-    exp->executionTime = cpu_time_used;
+    exp->executionTime = wall_time_used;
     exp->number = expNumber;
 
     for (int i = 0; i < k; i++) {
         free(centroids[i]);
-        free(prevCentroids[i]);
     }
     free(centroids);
     free(assignments);
-    free(prevCentroids);
 
     log_debug("K-means completed!");
 }

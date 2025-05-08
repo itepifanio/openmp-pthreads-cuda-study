@@ -7,7 +7,6 @@ void kmeans(
     int k, 
     int maxIter, 
     int numExp, 
-    int numThreads,
     int debug
 );
 
