@@ -212,8 +212,8 @@ Dataframe loadHtru2(const char *filename) {
 Dataframe loadWset(const char *filename)
 {
     const int MAX_ROWS = 4558554;
-    const int MAX_COLUMNS = 6;
-    const int NUM_FEATURES = 6;
+    const int MAX_COLUMNS = 8;
+    const int NUM_FEATURES = 8;
 
     FILE *file = fopen(filename, "r");
     if (!file) {
@@ -236,8 +236,13 @@ Dataframe loadWset(const char *filename)
     features[1] = "EDA";
     features[2] = "EMG";
     features[3] = "TEMP";
+
+    // it really has 3 xyz columns
     features[4] = "XYZ";
-    features[5] = "RESPIRATION";
+    features[5] = "XYZ";
+    features[6] = "XYZ";
+
+    features[7] = "RESPIRATION";
 
     int row = 0;
     while (row < MAX_ROWS && fgets(buffer, sizeof(buffer), file)) {
@@ -270,7 +275,7 @@ Dataframe loadWset(const char *filename)
         row,
         MAX_COLUMNS,
         NUM_FEATURES,
-        0,
+        2,
         NUM_FEATURES
     };
     return df;
