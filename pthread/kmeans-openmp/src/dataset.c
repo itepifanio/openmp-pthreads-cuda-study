@@ -27,7 +27,7 @@ Dataframe loadIris(const char *filename)
     }
 
     char **features = malloc(NUM_FEATURES * sizeof(char *));
-    float **matrix = malloc(MAX_ROWS * sizeof(float *));
+    double **matrix = malloc(MAX_ROWS * sizeof(double *));
 
     features[0] = "SepalLengthCm";
     features[1] = "SepalWidthCm";
@@ -38,14 +38,14 @@ Dataframe loadIris(const char *filename)
     while (row < MAX_ROWS && !feof(file))
     {
         int id;
-        float f1, f2, f3, f4;
+        double f1, f2, f3, f4;
         char *label = malloc(50 * sizeof(char)); // preciso alocar memória pro char?
 
         int result = fscanf(
-            file, "%d,%f,%f,%f,%f,%49[^\n]\n", &id, &f1, &f2, &f3, &f4, label
+            file, "%d,%lf,%lf,%lf,%lf,%49[^\n]\n", &id, &f1, &f2, &f3, &f4, label
         );
 
-        matrix[row] = malloc((NUM_FEATURES) * sizeof(float));
+        matrix[row] = malloc((NUM_FEATURES) * sizeof(double));
 
         matrix[row][0] = f1;
         matrix[row][1] = f2;
@@ -93,7 +93,7 @@ Dataframe loadRice(const char *filename)
         }
     }
 
-    float **matrix = malloc(MAX_ROWS * sizeof(float *));
+    double **matrix = malloc(MAX_ROWS * sizeof(double *));
     char **features = malloc(NUM_FEATURES * sizeof(char *));
 
     features[0] = "PerimeterReal";
@@ -106,16 +106,16 @@ Dataframe loadRice(const char *filename)
     int row = 0;
     while (row < MAX_ROWS && !feof(file))
     {
-        float f1, f2, f3, f4, f5, f6;
+        double f1, f2, f3, f4, f5, f6;
         char *label = malloc(50 * sizeof(char));
 
         int result = fscanf(
-            file, 
-            "%f,%f,%f,%f,%f,%f,%49[^\n]\n", 
+            file,
+            "%lf,%lf,%lf,%lf,%lf,%lf,%49[^\n]\n",
             &f1, &f2, &f3, &f4, &f5, &f6, label
         );
 
-        matrix[row] = malloc((NUM_FEATURES) * sizeof(float));
+        matrix[row] = malloc((NUM_FEATURES) * sizeof(double));
 
         matrix[row][0] = f1;
         matrix[row][1] = f2;
@@ -155,7 +155,7 @@ Dataframe loadHtru2(const char *filename) {
         exit(EXIT_FAILURE);
     }
 
-    float **matrix = malloc(MAX_ROWS * sizeof(float *));
+    double **matrix = malloc(MAX_ROWS * sizeof(double *));
     char **features = malloc(NUM_FEATURES * sizeof(char *));
 
     features[0] = "profileMean";
@@ -170,16 +170,16 @@ Dataframe loadHtru2(const char *filename) {
     int row = 0;
     while (row < MAX_ROWS && !feof(file))
     {
-        float f1, f2, f3, f4, f5, f6, f7, f8;
+        double f1, f2, f3, f4, f5, f6, f7, f8;
         char *label = malloc(2 * sizeof(char));
 
         int result = fscanf(
-            file, 
-            "%f,%f,%f,%f,%f,%f,%f,%f,%2[^\n]\n", 
+            file,
+            "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%2[^\n]\n",
             &f1, &f2, &f3, &f4, &f5, &f6, &f7, &f8, label
         );
 
-        matrix[row] = malloc((NUM_FEATURES) * sizeof(float));
+        matrix[row] = malloc((NUM_FEATURES) * sizeof(double));
 
         matrix[row][0] = f1;
         matrix[row][1] = f2;
@@ -229,7 +229,7 @@ Dataframe loadWset(const char *filename)
         }
     }
 
-    float **matrix = malloc(MAX_ROWS * sizeof(float *));
+    double **matrix = malloc(MAX_ROWS * sizeof(double *));
     char **features = malloc(NUM_FEATURES * sizeof(char *));
 
     features[0] = "ECG";
@@ -257,9 +257,9 @@ Dataframe loadWset(const char *filename)
             continue;
         }
 
-        matrix[row] = malloc(NUM_FEATURES * sizeof(float));
+        matrix[row] = malloc(NUM_FEATURES * sizeof(double));
         for (int i = 0; i < NUM_FEATURES; i++) {
-            matrix[row][i] = (float)ch[i];
+            matrix[row][i] = (double)ch[i];
         }
         row++;
     }

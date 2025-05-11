@@ -7,7 +7,7 @@
 #include "../include/log.h"
 
 void saveIterationData(
-    float **centroids,
+    double **centroids,
     int *assignments,
     Dataframe *df,
     int k,

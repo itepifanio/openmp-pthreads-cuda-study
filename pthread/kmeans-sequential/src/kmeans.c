@@ -31,17 +31,17 @@ End Algorithm
 #include "../include/helper.h"
 #include "../include/experiments.h"
 
-float **initCentroids(Dataframe *df, int k, int expNumber) {
+double **initCentroids(Dataframe *df, int k, int expNumber) {
     // Initialize centroids by randomly selecting k data points from the dataset
     srand(time(NULL) + expNumber);
 
     log_debug("Initializing centroids randomly...");
-    float **centroids = malloc(k * sizeof(float *));
+    double **centroids = malloc(k * sizeof(double *));
 
     for (int i = 0; i < k; i++)
     {
         int random_index = rand() % df->maxRows;
-        centroids[i] = malloc(df->numFeatures * sizeof(float));
+        centroids[i] = malloc(df->numFeatures * sizeof(double));
         for (int j = 0; j < df->numFeatures; j++)
         {
             centroids[i][j] = df->data[random_index][j];
@@ -53,17 +53,17 @@ float **initCentroids(Dataframe *df, int k, int expNumber) {
     return centroids;
 }
 
-int *updateAssignments(Dataframe *df, float **centroids, int k, int *assignments) {
+int *updateAssignments(Dataframe *df, double **centroids, int k, int *assignments) {
     // assign each data point to the nearest centroid
     log_debug("Updating assignments...");
 
     for (int i = 0; i < df->maxRows; i++)
     {
-        float minDistance = INFINITY;
+        double minDistance = INFINITY;
         int closestCentroid = -1;
         for (int j = 0; j < k; j++)
         {
-            float distance = euclideanDistance(df->data[i], centroids[j], df->numFeatures);
+            double distance = euclideanDistance(df->data[i], centroids[j], df->numFeatures);
             if (distance < minDistance)
             {
                 minDistance = distance;
@@ -77,13 +77,13 @@ int *updateAssignments(Dataframe *df, float **centroids, int k, int *assignments
     return assignments;
 }
 
-void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) {
+void updateCentroids(Dataframe *df, double **centroids, int *assignments, int k) {
     log_debug("Updating centroids...");
 
-    float **newCentroids = malloc(k * sizeof(float *));
+    double **newCentroids = malloc(k * sizeof(double *));
     int *counts = calloc(k, sizeof(int));
     for (int i = 0; i < k; i++) {
-        newCentroids[i] = calloc(df->numFeatures, sizeof(float));
+        newCentroids[i] = calloc(df->numFeatures, sizeof(double));
     }
 
     // Sum up data points assigned to each centroid
@@ -115,11 +115,11 @@ void updateCentroids(Dataframe *df, float **centroids, int *assignments, int k) 
 }
 
 int hasConverged(
-    float **currentCentroids,
-    float **prevCentroids,
+    double **currentCentroids,
+    double **prevCentroids,
     int k,
     int numFeatures,
-    float threshold
+    double threshold
 ) {
     for (int i = 0; i < k; i++) {
         for (int j = 0; j < numFeatures; j++) {
@@ -132,7 +132,7 @@ int hasConverged(
 }
 
 void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, int debug) {
-    const float CONVERGENCE_THRESHOLD = 1e-6;
+    const double CONVERGENCE_THRESHOLD = 1e-6;
 
     double start, end;
     double wall_time_used;
@@ -141,12 +141,12 @@ void kmeans(Dataframe *df, Experiment *exp, int k, int maxIter, int expNumber, i
 
     log_debug("Running k-means with k=%d and maxIter=%d...", k, maxIter);
 
-    float **centroids = initCentroids(df, k, expNumber);
+    double **centroids = initCentroids(df, k, expNumber);
 
     // TODO: separate function to allocate memory for prevCentroids
-    float **prevCentroids = malloc(k * sizeof(float *));
+    double **prevCentroids = malloc(k * sizeof(double *));
     for (int i = 0; i < k; i++) {
-        prevCentroids[i] = malloc(df->numFeatures * sizeof(float));
+        prevCentroids[i] = malloc(df->numFeatures * sizeof(double));
     }
 
     int *assignments = malloc(df->maxRows * sizeof(int));

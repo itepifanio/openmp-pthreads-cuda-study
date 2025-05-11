@@ -2,7 +2,7 @@
 #define EXPERIMENTS_H
 
 void saveIterationData(
-    float **centroids,
+    double **centroids,
     int *assignments,
     Dataframe *df,
     int k,
@@ -11,8 +11,8 @@ void saveIterationData(
 );
 
 void saveExperiment(
-    Experiment *experiments, 
-    int numberExperiments, 
+    Experiment *experiments,
+    int numberExperiments,
     char *dataframe
 );
 

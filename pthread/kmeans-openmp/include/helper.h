@@ -3,7 +3,7 @@
 
 typedef struct {
     char *name;
-    float **data;
+    double **data;
     char **features; // list of features
     int maxRows;
     int maxColumns;
@@ -14,11 +14,11 @@ typedef struct {
 
 typedef struct {
     int number;
-    float executionTime;
+    double executionTime;
     int convergenceIteration;
 } Experiment;
 
 // Removed so vectorize with simd
-// float euclideanDistance(float *point1, float *point2, int numFeatures);
+// double euclideanDistance(double *point1, double *point2, int numFeatures);
 
 #endif
