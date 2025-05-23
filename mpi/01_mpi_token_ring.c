@@ -9,13 +9,65 @@
 #define NTHREADS 4
 
 void openmpTasks(int rank, int *nekot) {
+	int task = 0;
+
 	#pragma omp parallel num_threads(NTHREADS) shared(nekot)
 	{
-		#pragma omp critical (incrementa)
-		{
-			printf("MPI Process %d, received %d and it's sending %d\n", rank, *nekot, (*nekot)+1);
-			fflush(0);
-			*nekot += 1;
+		#pragma omp single
+        {
+			#pragma omp task depend(out: nekot)
+			{
+				printf(
+					"MPI Process %d, executed by task %d, received %d and it's sending %d\n", 
+					rank,
+					task++, 
+					*nekot,
+					*nekot+1
+				);
+
+				*nekot += 1;
+			}
+
+			// t1
+			#pragma omp task depend(inout: nekot)
+			{
+				printf(
+					"MPI Process %d, executed by task %d, received %d and it's sending %d\n", 
+					rank,
+					task++, 
+					*nekot,
+					*nekot+1
+				);
+
+				*nekot += 1;
+			}
+
+			// t2
+			#pragma omp task depend(inout: nekot)
+			{
+				printf(
+					"MPI Process %d, executed by task %d, received %d and it's sending %d\n", 
+					rank,
+					task++, 
+					*nekot,
+					*nekot+1
+				);
+
+				*nekot += 1;
+			}
+
+			#pragma omp task depend(inout: nekot)
+			{
+				printf(
+					"MPI Process %d, executed by task %d, received %d and it's sending %d\n", 
+					rank,
+					task++, 
+					*nekot,
+					*nekot+1
+				);
+
+				*nekot += 1;
+			}
 		}
 	}
 }
@@ -55,6 +107,9 @@ int  main(int argc, char *argv[])	{
 		MPI_Send(&token, count, MPI_INT, dest, msgtag, MPI_COMM_WORLD);
 		// blocking receive
 		MPI_Recv(&nekot, count, MPI_INT, src, msgtag, MPI_COMM_WORLD, &status);
+
+		openmpTasks(myrank, &nekot);
+
 		printf("Computing done. Final value: %d. \n", nekot);
 	}
 	else
