@@ -1,6 +1,6 @@
-# K-Means Clustering Sequential
+# K-Means Clustering OpenMP
 
-This project implements the K-Means clustering algorithm in C.
+This project implements the K-Means clustering algorithm in C with OpenMP.
 
 ## About K-Means
 
